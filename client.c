@@ -1,11 +1,3 @@
-//
-// client.c
-// simple_client
-//
-// Created by Injae Lee on 2014. 10. 10.
-// Modified by Minsuk Lee,
-// Copyright (c) 2014. Injae Lee All rights reserved.
-// see LICENSE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,11 +5,12 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <sys/epoll.h>
 
 #define IP "127.0.0.1"
-#define PORT 3002
-#define WRITE_DATA "Hello dayoungle!"
+#define PORT 3001
 #define MAX_DATA 100
+#define EPOLL_SIZE 50
 
 int main()
 {
@@ -26,8 +19,14 @@ int main()
     char input[10] ="input";
     struct sockaddr_in serverAddr;
     char buffer[MAX_DATA];
+    socklen_t adr_sz =  sizeof(serverAddr);
+    int optval = 1;
+    struct epoll_event* ep_events;
+    struct epoll_event event;
+    int epfd, event_cnt, i, str_len;
+
     if ((clientSock = socket(PF_INET, SOCK_STREAM, 0)) == -1) {
-        perror("socket");//perror도 뭐하는 녀석인지.이 밑줄도 이런 문법은 뭐지?
+        perror("socket");
         goto leave;
     }
 
@@ -35,12 +34,46 @@ int main()
     serverAddr.sin_addr.s_addr = inet_addr(IP);
     serverAddr.sin_port = htons(PORT);
 
-    if ((ret = connect(clientSock,(struct sockaddr*)&serverAddr,
-                       sizeof(serverAddr)))) {
+    if ((ret = connect(clientSock,(struct sockaddr*)&serverAddr, sizeof(serverAddr)))) {
         perror("connect");
         goto error;
     }
+
+    epfd = epoll_create(EPOLL_SIZE);
+    ep_events = malloc(sizeof(struct epoll_event)*EPOLL_SIZE);
+    event.events = EPOLLIN;
+    event.data.fd = clientSock;
+    epoll_ctl(epfd, EPOLL_CTL_ADD, clientSock, &event);
+    event.data.fd = 0;
+    epoll_ctl(epfd, EPOLL_CTL_ADD, 0, &event);
     while(1){
+        event_cnt = epoll_wait(epfd, ep_events, EPOLL_SIZE, -1);
+        if(event_cnt == -1){
+            perror("epoll_wait");
+            goto error;
+        }
+        printf("event_cnt %d \n", event_cnt);
+        for(i=0; i < event_cnt; i++){
+            if(ep_events[i].data.fd == 0){
+                fgets(buffer, MAX_DATA,stdin);
+                if ((ret = send(clientSock, buffer, strlen(buffer), 0)) <= 0) {
+                    perror("send");
+                     ret = -1;
+                 } else
+                    printf("I Client:  %s \n", buffer);
+            } else {
+                if ((ret = recv(clientSock, buffer, MAX_DATA, 0)) <= 0) {
+                    perror("recv");
+                    ret = -1;
+                    goto leave;
+                } else
+                    printf("%d: %s \n",  ep_events[i].data.fd,buffer);
+            }
+            //find event[i]. 
+            //if buffer is not empty >> print buffer
+            //if this client wrote >> send msg to server
+        }
+        /*
         printf("%s\n", input);
         fgets(buffer, MAX_DATA,stdin);
         //종료 조건
@@ -58,7 +91,8 @@ int main()
         } else
             printf("You Server: %s \n",  buffer);
     } 
-
+*/
+    }
 error:
     close(clientSock);
 leave:
