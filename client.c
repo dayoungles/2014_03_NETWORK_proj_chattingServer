@@ -14,7 +14,7 @@
 
 int main()
 {
-    int ret = -1;//이게 뭐하는 인자인지.
+    int ret = -1;
     int clientSock;
     char input[10] ="input";
     struct sockaddr_in serverAddr;
@@ -46,13 +46,14 @@ int main()
     epoll_ctl(epfd, EPOLL_CTL_ADD, clientSock, &event);
     event.data.fd = 0;
     epoll_ctl(epfd, EPOLL_CTL_ADD, 0, &event);
+
     while(1){
         event_cnt = epoll_wait(epfd, ep_events, EPOLL_SIZE, -1);
         if(event_cnt == -1){
             perror("epoll_wait");
             goto error;
         }
-        printf("event_cnt %d \n", event_cnt);
+        
         for(i=0; i < event_cnt; i++){
             if(ep_events[i].data.fd == 0){
                 fgets(buffer, MAX_DATA,stdin);
@@ -60,7 +61,7 @@ int main()
                     perror("send");
                      ret = -1;
                  } else
-                    printf("I Client:  %s \n", buffer);
+                    printf("I :  %s \n", buffer);
             } else {
                 if ((ret = recv(clientSock, buffer, MAX_DATA, 0)) <= 0) {
                     perror("recv");
@@ -69,29 +70,8 @@ int main()
                 } else
                     printf("%d: %s \n",  ep_events[i].data.fd,buffer);
             }
-            //find event[i]. 
-            //if buffer is not empty >> print buffer
-            //if this client wrote >> send msg to server
         }
-        /*
-        printf("%s\n", input);
-        fgets(buffer, MAX_DATA,stdin);
-        //종료 조건
-        if(!strcmp(buffer, "q\n") || !strcmp(buffer, "Q\n"))
-            break;
-        if ((ret = send(clientSock, buffer, sizeof(buffer), 0)) <= 0) {
-            perror("send");
-            ret = -1;
-        } else
-            printf("I Client:  %s \n", buffer);
-        
-        if ((ret = recv(clientSock, buffer, MAX_DATA, 0)) <= 0) {
-            perror("recv");
-            ret = -1;
-        } else
-            printf("You Server: %s \n",  buffer);
-    } 
-*/
+
     }
 error:
     close(clientSock);

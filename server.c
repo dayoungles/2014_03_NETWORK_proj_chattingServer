@@ -101,34 +101,6 @@ int main()
     close(serverSock);
     close(epfd);
     return 0;
-
-    //     acceptedSock = accept(serverSock, (struct sockaddr *)&serv_adr, &AddrSize);
-    
-    //     if (acceptedSock == -1) {
-    //         perror("accept");
-    //         ret = -1;
-    //         goto error;
-    //     }
-
-    // 	   if ((ret = recv(acceptedSock, readBuf, MAX_DATA, 0)) <= 0) {
-    //         perror("recv");
-    //         ret = -1;
-    //     } else
-    // 	    printf("You client: '%s'\n" ,readBuf);
-        
-    //     if(!strcmp(readBuf, "q\n") || !strcmp(readBuf, "Q\n"))
-    //         break;
-    //     printf("%s", input);
-    //     fgets(readBuf, MAX_DATA,stdin);
-        
-    //     if ((ret = send(acceptedSock, readBuf, ret, 0)) <= 0) {
-    //         perror("send");
-    //         ret = -1;
-    //     } else
-    //         printf("I server: '%s' \n", readBuf);
-        
-    // }
-    // close(acceptedSock);
 	
 error:
     close(serverSock);
@@ -149,18 +121,16 @@ void addFdNum(int* arr, int fd){
 void deleteFdNum(int* arr, int fd){
     int i;
     for(i = 0; i < 10; i++){
-        if(arr[i] == fd){
-            arr[i] = 0;
-
-        }
+        if(arr[i] == fd)
+            arr[i] = 0;    
     }
 }
 
 void init(int* arr){
     int i = 0;
-    for(i = 0; i< 10; i++){
+    for(i = 0; i< 10; i++)
         arr[i] = 0;
-    }
+    
 }
 
 void broadcast(int* arr, int fd, char* buffer, int bufferSize){
@@ -169,7 +139,6 @@ void broadcast(int* arr, int fd, char* buffer, int bufferSize){
     for(i = 0; i < 10; i++){
         if(arr[i]== fd || arr[i] == 0)
             continue;
-
         write(arr[i], buffer, bufferSize);
     }
 }
